@@ -8,6 +8,7 @@ const elements = {
   download: document.querySelector("#baixarPng"),
   print: document.querySelector("#salvarPdf"),
   message: document.querySelector("#mensagem"),
+  loading: document.querySelector("#certificateLoading"),
 };
 
 const renderer = new CertificateRenderer(elements.canvas);
@@ -69,6 +70,7 @@ async function init() {
 
 async function loadSelectedEvent() {
   currentEvent = events.find(event => event.id === elements.event.value);
+  setCertificateLoading(true);
 
   if (!currentEvent?.disponivel) {
     setButtonsDisabled(true);
@@ -143,6 +145,11 @@ function blobToDataUrl(blob) {
     reader.onerror = () => reject(new Error("Não foi possível preparar o arquivo PDF."));
     reader.readAsDataURL(blob);
   });
+}
+
+function setCertificateLoading(loading) {
+  if (!elements.loading) return;
+  elements.loading.classList.toggle("is-hidden", !loading);
 }
 
 function setButtonsDisabled(disabled) {
