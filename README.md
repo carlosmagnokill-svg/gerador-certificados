@@ -91,26 +91,48 @@ o navegador precisa estar ligado à internet no primeiro carregamento.
 - A geração de PDF usa a biblioteca jsPDF carregada por CDN.
 
 
-## Controle de acesso — versão de teste
-
-- Fonte importada: `Nomes-comadres-2026.xlsx`
-- Participantes válidos processados: 10
-- Opções de acesso: CPF ou telefone
-- Entrada aceita: apenas números
-- Limite: 5 tentativas
-- Bloqueio local: 3 minutos
-- Após a validação, o nome cadastrado aparece como identificação do participante e também é sugerido no campo do certificado
-- O arquivo `participantes.json` guarda hashes SHA-256, não CPF ou telefone em texto aberto
-
-### Limitação importante
-
-Este bloqueio é executado no navegador e usa `localStorage`. Ele reduz acessos casuais, mas não é
-segurança forte. Para a publicação definitiva, a validação deve ocorrer numa API/backend, sem disponibilizar
-a lista de participantes no site estático.
-
 
 ## Ajuste do nome no certificado
 
 O nome cadastrado é usado apenas para identificar o participante autorizado.
 O campo do nome do certificado permanece editável, permitindo correções, abreviações ou diferenças entre
 o nome de cadastro e o nome que deve aparecer no certificado.
+
+
+## Controle de acesso — leitura direta da planilha
+
+O sistema lê diretamente:
+
+```text
+data/Nomes-comadres-2026.xlsx
+```
+
+Regras:
+
+- A primeira aba deve conter as colunas `NOME`, `TELEFONE` e `CPF`.
+- Telefone e CPF são comparados somente pelos números.
+- Símbolos, espaços, pontos, hífens e parênteses são descartados.
+- O acesso permite 5 tentativas.
+- Depois da quinta falha, o navegador bloqueia novas tentativas durante 3 minutos.
+- O nome encontrado é apresentado como participante e sugerido no campo editável do certificado.
+- Ao substituir a planilha, atualize a página para carregar os dados novos.
+
+### Teste local
+
+O projeto precisa ser aberto por um servidor local, e não diretamente pelo arquivo `index.html`.
+
+```bash
+python -m http.server 8000
+```
+
+Abra:
+
+```text
+http://localhost:8000
+```
+
+### Atenção para publicação
+
+Como o repositório e o GitHub Pages são públicos, o arquivo XLSX também poderá ser acessado por terceiros.
+Esta versão é apropriada apenas para testes. Para produção, CPF e telefone devem ser validados por uma
+API ou backend privado.
