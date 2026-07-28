@@ -72,16 +72,23 @@ async function loadSelectedEvent() {
   currentEvent = events.find(event => event.id === elements.event.value);
   setCertificateLoading(true);
 
-  if (!currentEvent?.disponivel) {
-    setButtonsDisabled(true);
-    showMessage("A arte deste evento ainda não está disponível.", "warning");
-    return;
-  }
+  try {
+    if (!currentEvent?.disponivel) {
+      setButtonsDisabled(true);
+      showMessage("A arte deste evento ainda não está disponível.", "warning");
+      return;
+    }
 
-  await renderer.load(currentEvent);
-  updatePreview();
-  setButtonsDisabled(false);
-  showMessage("Arte carregada. Revise ou ajuste o nome antes de salvar.", "success");
+    await renderer.load(currentEvent);
+    updatePreview();
+    setButtonsDisabled(false);
+    showMessage("Arte carregada. Revise ou ajuste o nome antes de salvar.", "success");
+  } catch (error) {
+    setButtonsDisabled(true);
+    showMessage(error.message || "Não foi possível carregar o modelo do certificado.", "warning");
+  } finally {
+    setCertificateLoading(false);
+  }
 }
 
 function updatePreview() {
