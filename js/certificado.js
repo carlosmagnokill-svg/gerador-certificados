@@ -4,6 +4,9 @@ export class CertificateRenderer {
     this.ctx = canvas.getContext("2d", { alpha: false });
     this.config = null;
     this.image = null;
+
+    this.ctx.fillStyle = "#eef1f3";
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
   async load(config) {
