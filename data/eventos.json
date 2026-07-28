@@ -1,0 +1,36 @@
+{
+  "eventos": [
+    {
+      "id": "encontro-comadres-2026",
+      "titulo": "Encontro de Comadres 2026",
+      "disponivel": true,
+      "imagem": "assets/certificados/certificado-encontro-comadres-2026.png",
+      "larguraOriginal": 1750,
+      "alturaOriginal": 1167,
+      "dpiOriginal": 148,
+      "dpiExportacao": 300,
+      "larguraExportacao": 3548,
+      "alturaExportacao": 2366,
+      "campoNome": {
+        "x": 875.0,
+        "y": 585,
+        "distanciaTopoCm": 10.04,
+        "larguraMaxima": 1300,
+        "tamanhoPt": 30,
+        "tamanhoMinimoPt": 16,
+        "peso": 600,
+        "cor": "#000000",
+        "alinhamento": "center",
+        "fonte": "\"Libre Baskerville\", Georgia, serif"
+      }
+    },
+    {
+      "id": "cafe-com-foto-2027",
+      "titulo": "Café com Foto 2027",
+      "disponivel": false,
+      "imagem": "",
+      "larguraOriginal": 1750,
+      "alturaOriginal": 1167
+    }
+  ]
+}
