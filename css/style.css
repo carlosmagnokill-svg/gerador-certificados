@@ -185,21 +185,17 @@ input:focus, select:focus {
   overflow: hidden;
   min-height: 260px;
   border-radius: 12px;
-  background:
-    linear-gradient(45deg, #eee 25%, transparent 25%),
-    linear-gradient(-45deg, #eee 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #eee 75%),
-    linear-gradient(-45deg, transparent 75%, #eee 75%);
-  background-size: 20px 20px;
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background: #eef1f3;
   border: 1px solid var(--border);
+  aspect-ratio: 1750 / 1167;
 }
 
 canvas {
   display: block;
   width: 100%;
-  height: auto;
-  background: #fff;
+  height: 100%;
+  object-fit: contain;
+  background: #eef1f3;
 }
 
 .footer {
@@ -395,5 +391,47 @@ canvas {
 @media (prefers-reduced-motion: reduce) {
   .loading-spinner {
     animation-duration: 1.8s;
+  }
+}
+
+
+.brand-bar {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  background: #3f454b;
+  color: #ffffff;
+  font-size: .82rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+#nome {
+  background: #fff8d9;
+}
+
+#nome:focus {
+  background: #fff4bf;
+}
+
+.name-helper {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: .82rem;
+}
+
+.access-gate {
+  min-height: calc(100dvh - 38px);
+}
+
+@media (max-width: 540px) {
+  .canvas-shell {
+    min-height: 0;
+    aspect-ratio: 1750 / 1167;
+  }
+
+  .certificate-loading {
+    min-height: 0;
   }
 }
