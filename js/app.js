@@ -34,7 +34,7 @@ async function authorizeParticipant(participant) {
   document.querySelector("#accessGate").hidden = true;
   document.querySelector("#appContent").hidden = false;
   document.querySelector("#participantLabel").textContent = `Participante: ${participant.nome}`;
-  elements.name.value = participant.nome;
+  elements.name.value = participant.nome.toUpperCase();
 
   try {
     await init();
