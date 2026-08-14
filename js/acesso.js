@@ -1,19 +1,16 @@
-const STORAGE_KEY = "certificados-access-lock-v2";
+const STORAGE_KEY = "certificados-access-lock-v3";
 const MAX_ATTEMPTS = 5;
 const LOCK_MS = 3 * 60 * 1000;
-const SPREADSHEET_URL = "data/Nomes-comadres-2026.xlsx";
+const ACCESS_ENDPOINT = "https://script.google.com/macros/s/AKfycbylofB3BfRtZqus9ctbR6Yg-n0A8AzvkMfGiFgQl7rUq3ydJ6pz2YhMDMsuDlfr1iOO7A/exec";
 
 export class AccessGate {
   constructor(elements) {
     this.elements = elements;
-    this.participants = [];
     this.state = this.#readState();
     this.timer = null;
   }
 
   async init() {
-    await this.#loadSpreadsheet();
-
     this.elements.input.addEventListener("input", () => {
       this.elements.input.value = this.elements.input.value.replace(/\D+/g, "");
       this.#clearMessage();
@@ -22,9 +19,11 @@ export class AccessGate {
     this.elements.form.querySelectorAll('input[name="tipoAcesso"]').forEach(input => {
       input.addEventListener("change", () => {
         this.elements.input.value = "";
-        this.elements.input.maxLength = input.value === "cpf" ? 11 : 11;
+        this.elements.input.maxLength = 11;
         this.elements.input.placeholder =
-          input.value === "cpf" ? "Digite o CPF, somente números" : "Digite o telefone, somente números";
+          input.value === "cpf"
+            ? "Digite o CPF, somente números"
+            : "Digite o telefone, somente números";
         this.#clearMessage();
         this.elements.input.focus();
       });
@@ -38,65 +37,7 @@ export class AccessGate {
     this.#refreshLockState();
   }
 
-  async #loadSpreadsheet() {
-    if (!window.XLSX) {
-      throw new Error("A biblioteca de leitura da planilha não foi carregada.");
-    }
-
-    const response = await fetch(`${SPREADSHEET_URL}?v=${Date.now()}`, {
-      cache: "no-store"
-    });
-
-    if (!response.ok) {
-      throw new Error(`Não foi possível carregar ${SPREADSHEET_URL}.`);
-    }
-
-    const buffer = await response.arrayBuffer();
-    const workbook = window.XLSX.read(buffer, { type: "array" });
-    const firstSheetName = workbook.SheetNames[0];
-
-    if (!firstSheetName) {
-      throw new Error("A planilha não possui nenhuma aba.");
-    }
-
-    const sheet = workbook.Sheets[firstSheetName];
-    const rows = window.XLSX.utils.sheet_to_json(sheet, {
-      header: 1,
-      defval: "",
-      raw: false
-    });
-
-    if (!rows.length) {
-      throw new Error("A planilha de participantes está vazia.");
-    }
-
-    const headers = rows[0].map(value =>
-      String(value || "").trim().toUpperCase()
-    );
-
-    const nameIndex = headers.indexOf("NOME");
-    const phoneIndex = headers.indexOf("TELEFONE");
-    const cpfIndex = headers.indexOf("CPF");
-
-    if (nameIndex < 0 || phoneIndex < 0 || cpfIndex < 0) {
-      throw new Error("A planilha precisa conter as colunas NOME, TELEFONE e CPF.");
-    }
-
-    this.participants = rows
-      .slice(1)
-      .map(row => ({
-        nome: String(row[nameIndex] || "").trim(),
-        telefone: this.#digits(row[phoneIndex]),
-        cpf: this.#digits(row[cpfIndex])
-      }))
-      .filter(item => item.nome && (item.telefone || item.cpf));
-
-    if (!this.participants.length) {
-      throw new Error("Nenhum participante válido foi encontrado na planilha.");
-    }
-  }
-
-  validate() {
+  async validate() {
     this.#refreshLockState();
     if (this.#isLocked()) return;
 
@@ -111,20 +52,60 @@ export class AccessGate {
       return;
     }
 
-    const participant = this.participants.find(item => item[type] === value);
+    this.elements.submit.disabled = true;
+    this.#showMessage("Validando acesso...", "success");
 
-    if (participant) {
-      const accessInfo = {
-        tipoAcesso: type.toUpperCase(),
-        identificador: value
-      };
+    try {
+      const response = await fetch(ACCESS_ENDPOINT, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=UTF-8"
+        },
+        body: JSON.stringify({
+          acao: "VALIDAR_ACESSO",
+          tipoAcesso: type.toUpperCase(),
+          identificador: value
+        })
+      });
 
-      this.#clearState();
-      this.#showMessage("Acesso autorizado.", "success");
-      this.onAuthorized?.(participant, accessInfo);
-      return;
+      if (!response.ok) {
+        throw new Error("Falha ao validar o acesso.");
+      }
+
+      const result = await response.json();
+
+      if (result?.ok && result?.autorizado) {
+        const participant = {
+          nome: String(result.nome || "").trim()
+        };
+
+        const accessInfo = {
+          tipoAcesso: type.toUpperCase(),
+          identificador: value
+        };
+
+        this.#clearState();
+        this.#showMessage("Acesso autorizado.", "success");
+        this.onAuthorized?.(participant, accessInfo);
+        return;
+      }
+
+      this.#registerInvalidAttempt(type);
+
+    } catch (error) {
+      console.error(error);
+      this.#showMessage(
+        "Não foi possível validar o acesso agora. Tente novamente.",
+        "warning"
+      );
+    } finally {
+      if (!this.#isLocked()) {
+        this.elements.submit.disabled = false;
+      }
     }
+  }
 
+  #registerInvalidAttempt(type) {
     this.state.attemptsRemaining -= 1;
 
     if (this.state.attemptsRemaining <= 0) {
@@ -167,9 +148,7 @@ export class AccessGate {
         }
         return saved;
       }
-    } catch (_) {
-      // Um estado inválido é simplesmente reiniciado.
-    }
+    } catch (_) {}
 
     return { attemptsRemaining: MAX_ATTEMPTS, lockedUntil: 0 };
   }
