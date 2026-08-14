@@ -104,7 +104,7 @@ o nome de cadastro e o nome que deve aparecer no certificado.
 O sistema lê diretamente:
 
 ```text
-data/Nomes-comadres-2026.xlsx
+
 ```
 
 Regras:
