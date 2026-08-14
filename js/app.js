@@ -1,6 +1,10 @@
 import { CertificateRenderer } from "./certificado.js";
 import { AccessGate } from "./acesso.js";
 
+const CERTIFICATE_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbylofB3BfRtZqus9ctbR6Yg-n0A8AzvkMfGiFgQl7rUq3ydJ6pz2YhMDMsuDlfr1iOO7A/exec";
+let authenticatedParticipant = null;
+let authenticatedAccess = null;
+
 const elements = {
   event: document.querySelector("#evento"),
   name: document.querySelector("#nome"),
@@ -23,14 +27,16 @@ const accessGate = new AccessGate({
   message: document.querySelector("#accessMessage")
 });
 
-accessGate.onAuthorized = participant => authorizeParticipant(participant);
+accessGate.onAuthorized = (participant, accessInfo) => authorizeParticipant(participant, accessInfo);
 accessGate.init().catch(error => {
   const message = document.querySelector("#accessMessage");
   message.textContent = error.message;
   message.className = "access-message is-visible is-warning";
 });
 
-async function authorizeParticipant(participant) {
+async function authorizeParticipant(participant, accessInfo) {
+  authenticatedParticipant = participant;
+  authenticatedAccess = accessInfo;
   document.querySelector("#accessGate").hidden = true;
   document.querySelector("#appContent").hidden = false;
   document.querySelector("#participantLabel").textContent = `Participante: ${participant.nome}`;
@@ -95,6 +101,35 @@ function updatePreview() {
   renderer.draw(elements.name.value);
 }
 
+
+async function registerCertificateDownload(formato) {
+  if (!authenticatedParticipant || !authenticatedAccess || !currentEvent) return;
+
+  const payload = {
+    evento: currentEvent.titulo,
+    nomeCadastro: authenticatedParticipant.nome,
+    nomeCertificado: elements.name.value.trim(),
+    tipoAcesso: authenticatedAccess.tipoAcesso,
+    identificador: authenticatedAccess.identificador,
+    formato: String(formato).toUpperCase()
+  };
+
+  try {
+    await fetch(CERTIFICATE_LOG_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      cache: "no-store",
+      keepalive: true,
+      headers: {
+        "Content-Type": "text/plain;charset=UTF-8"
+      },
+      body: JSON.stringify(payload)
+    });
+  } catch (error) {
+    console.warn("Não foi possível registrar o download do certificado.", error);
+  }
+}
+
 async function downloadPng() {
   try {
     setButtonsDisabled(true);
@@ -107,6 +142,8 @@ async function downloadPng() {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
+
+    await registerCertificateDownload("PNG");
     showMessage("Certificado gerado em alta resolução.", "success");
   } catch (error) {
     showMessage(error.message, "warning");
@@ -137,6 +174,7 @@ async function printPdf() {
     pdf.addImage(dataUrl, "PNG", 0, 0, 300.4, 200.3, undefined, "FAST");
     pdf.save(`${slugify(currentEvent.titulo)}-${slugify(elements.name.value)}.pdf`);
 
+    await registerCertificateDownload("PDF");
     showMessage("PDF gerado e baixado diretamente no dispositivo.", "success");
   } catch (error) {
     showMessage(error.message, "warning");

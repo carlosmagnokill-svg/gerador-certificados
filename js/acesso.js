@@ -114,9 +114,14 @@ export class AccessGate {
     const participant = this.participants.find(item => item[type] === value);
 
     if (participant) {
+      const accessInfo = {
+        tipoAcesso: type.toUpperCase(),
+        identificador: value
+      };
+
       this.#clearState();
       this.#showMessage("Acesso autorizado.", "success");
-      this.onAuthorized?.(participant);
+      this.onAuthorized?.(participant, accessInfo);
       return;
     }
 
